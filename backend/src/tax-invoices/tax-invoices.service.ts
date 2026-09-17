@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -28,6 +29,8 @@ export interface InvoiceQueryFilter {
 
 @Injectable()
 export class TaxInvoicesService {
+  private readonly logger = new Logger(TaxInvoicesService.name);
+
   constructor(
     @InjectRepository(TaxInvoice)
     private readonly invoiceRepository: Repository<TaxInvoice>,
@@ -42,9 +45,6 @@ export class TaxInvoicesService {
       throw new BadRequestException('XML 파일만 업로드 가능합니다');
     }
 
-    const fileKey = `invoices/${user.id}/${Date.now()}-${file.filename}`;
-    await this.storageService.uploadFile('tax-files', fileKey, file.buffer, file.mimetype);
-
     const bizNumber = user.businessNumber ?? '';
     const parsed = this.xmlParserService.parseXml(file.buffer, bizNumber);
 
@@ -54,6 +54,9 @@ export class TaxInvoicesService {
     if (existing) {
       throw new BadRequestException('이미 등록된 세금계산서입니다');
     }
+
+    const fileKey = `invoices/${user.id}/${Date.now()}-${file.filename}`;
+    await this.storageService.uploadFile('tax-files', fileKey, file.buffer, file.mimetype);
 
     const invoice = this.invoiceRepository.create({
       userId: user.id,
@@ -159,7 +162,17 @@ export class TaxInvoicesService {
     if (invoice.userId !== userId) {
       throw new ForbiddenException('삭제 권한이 없습니다');
     }
+
+    const fileKey = invoice.rawFileKey;
     await this.invoiceRepository.remove(invoice);
+
+    if (fileKey) {
+      try {
+        await this.storageService.deleteFile(fileKey);
+      } catch (error) {
+        this.logger.warn(`원본 파일 삭제 실패(무시): ${fileKey} - ${String(error)}`);
+      }
+    }
   }
 
   private getQuarterMonths(quarter: number): { startMonth: number; endMonth: number } {
@@ -169,7 +182,11 @@ export class TaxInvoicesService {
       3: { startMonth: 7, endMonth: 9 },
       4: { startMonth: 10, endMonth: 12 },
     };
-    return map[quarter] ?? { startMonth: 1, endMonth: 3 };
+    const months = map[quarter];
+    if (!months) {
+      throw new BadRequestException('분기는 1~4 사이의 값이어야 합니다');
+    }
+    return months;
   }
 
   private sumTaxAmount(invoices: TaxInvoice[], direction: InvoiceDirection): number {

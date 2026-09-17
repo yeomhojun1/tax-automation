@@ -35,6 +35,7 @@ export class XmlParserService {
   private readonly parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: '@_',
+    removeNSPrefix: true, // <tax:TaxInvoice> 같은 접두사 네임스페이스 지원
     parseTagValue: true,
     trimValues: true,
     numberParseOptions: {
@@ -70,7 +71,10 @@ export class XmlParserService {
     const exchangeDoc = root['ExchangedDocument'] as Record<string, unknown>;
     const supplyChain = root['SupplyChainTradeTransaction'] as Record<string, unknown>;
 
-    const invoiceNumber = String(exchangeDoc?.['ID'] ?? '');
+    const invoiceNumber = String(exchangeDoc?.['ID'] ?? '').trim();
+    if (!invoiceNumber) {
+      throw new BadRequestException('세금계산서 승인번호(ExchangedDocument/ID)가 없습니다');
+    }
     const typeCode = String(exchangeDoc?.['TypeCode'] ?? '01');
     const issueDateStr = String(exchangeDoc?.['IssueDateTime'] ?? '');
 
@@ -93,8 +97,8 @@ export class XmlParserService {
     const counterpartyBizNumber = isSeller ? buyerBizNumber || null : sellerBizNumber || null;
 
     const taxSummary = settlement?.['SpecifiedTradeSettlementMonetarySummation'] as Record<string, unknown>;
-    const supplyAmount = Number(taxSummary?.['TaxBasisTotalAmount'] ?? 0);
-    const taxAmount = Number(taxSummary?.['TaxTotalAmount'] ?? 0);
+    const supplyAmount = this.parseAmount(taxSummary?.['TaxBasisTotalAmount'], '공급가액');
+    const taxAmount = this.parseAmount(taxSummary?.['TaxTotalAmount'], '세액');
 
     const items = this.parseLineItems(lineItems);
 
@@ -127,21 +131,48 @@ export class XmlParserService {
       return {
         itemName: String(product?.['Name'] ?? ''),
         specification: String(product?.['Description'] ?? '') || null,
-        quantity: Number(delivery?.['BilledQuantity'] ?? 0),
-        unitPrice: Number((priceAgreement?.['GrossPriceProductTradePrice'] as Record<string, unknown>)?.['ChargeAmount'] ?? 0),
-        supplyAmount: Number(monetarySummation?.['LineTotalAmount'] ?? 0),
-        taxAmount: Number(taxInfo?.['CalculatedAmount'] ?? 0),
+        quantity: this.parseAmount(delivery?.['BilledQuantity'], '품목 수량'),
+        unitPrice: this.parseAmount(
+          (priceAgreement?.['GrossPriceProductTradePrice'] as Record<string, unknown>)?.['ChargeAmount'],
+          '품목 단가',
+        ),
+        supplyAmount: this.parseAmount(monetarySummation?.['LineTotalAmount'], '품목 공급가액'),
+        taxAmount: this.parseAmount(taxInfo?.['CalculatedAmount'], '품목 세액'),
       };
     });
   }
 
-  private parseIssueDate(dateStr: string): Date {
-    if (dateStr.length >= 8) {
-      const year = dateStr.slice(0, 4);
-      const month = dateStr.slice(4, 6);
-      const day = dateStr.slice(6, 8);
-      return new Date(`${year}-${month}-${day}`);
+  private parseAmount(value: unknown, label: string): number {
+    if (value === undefined || value === null || value === '') {
+      return 0;
     }
-    return new Date();
+    const normalized = String(value).replace(/,/g, '').trim();
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+      throw new BadRequestException(`${label} 금액 형식이 올바르지 않습니다: ${String(value)}`);
+    }
+    return parsed;
+  }
+
+  private parseIssueDate(dateStr: string): Date {
+    const digits = dateStr.replace(/[^0-9]/g, '');
+    if (digits.length < 8) {
+      throw new BadRequestException('세금계산서 작성일자(IssueDateTime)가 없습니다');
+    }
+
+    const year = digits.slice(0, 4);
+    const month = digits.slice(4, 6);
+    const day = digits.slice(6, 8);
+    const date = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.getUTCMonth() + 1 !== Number(month) ||
+      date.getUTCDate() !== Number(day)
+    ) {
+      throw new BadRequestException(`세금계산서 작성일자(IssueDateTime)가 올바르지 않습니다: ${dateStr}`);
+    }
+
+    return date;
   }
 }

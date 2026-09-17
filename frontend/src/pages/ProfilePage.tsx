@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '@/api/auth.api';
 import useAuthStore from '@/store/useAuthStore';
+import { getErrorMessage } from '@/utils/errorMessage';
 
 const INITIAL_PW_FORM = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
@@ -27,8 +28,8 @@ export default function ProfilePage(): JSX.Element {
       setSuccessMessage('프로필이 저장되었습니다');
       setErrorMessage(null);
     },
-    onError: () => {
-      setErrorMessage('저장에 실패했습니다');
+    onError: (error) => {
+      setErrorMessage(getErrorMessage(error, '저장에 실패했습니다'));
       setSuccessMessage(null);
     },
   });
@@ -40,8 +41,8 @@ export default function ProfilePage(): JSX.Element {
       setPwError(null);
       setPwForm(INITIAL_PW_FORM);
     },
-    onError: () => {
-      setPwError('현재 비밀번호가 올바르지 않습니다');
+    onError: (error) => {
+      setPwError(getErrorMessage(error, '비밀번호 변경에 실패했습니다'));
       setPwSuccess(null);
     },
   });

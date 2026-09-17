@@ -21,6 +21,7 @@ export class RegisterDto {
   businessName: string;
 
   @IsString()
+  @MaxLength(20)
   @IsOptional()
   businessNumber?: string;
 

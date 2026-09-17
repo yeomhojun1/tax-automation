@@ -17,8 +17,9 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
 import { ExpensesService } from './expenses.service';
-import { Expense, ExpenseCategory } from './entities/expense.entity';
+import { Expense } from './entities/expense.entity';
 import { CreateExpenseDto } from './dtos/create-expense.dto';
+import { ExpenseQueryDto } from './dtos/expense-query.dto';
 import { UpdateExpenseDto } from './dtos/update-expense.dto';
 
 @ApiTags('expenses')
@@ -30,16 +31,13 @@ export class ExpensesController {
   @Get()
   findAll(
     @CurrentUser() user: User,
-    @Query('year') year?: string,
-    @Query('month') month?: string,
-    @Query('category') category?: ExpenseCategory,
-    @Query('search') search?: string,
+    @Query() query: ExpenseQueryDto,
   ): Promise<Expense[]> {
     return this.expensesService.findAll(user.id, {
-      year: year ? parseInt(year, 10) : undefined,
-      month: month ? parseInt(month, 10) : undefined,
-      category,
-      search,
+      year: query.year,
+      month: query.month,
+      category: query.category,
+      search: query.search,
     });
   }
 

@@ -4,6 +4,7 @@ import { expensesApi, CreateExpenseRequest, ExpenseQueryParams } from '@/api/exp
 import { Expense, ExpenseCategory, EXPENSE_CATEGORY_LABEL } from '@/types';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { downloadExpensesCsv } from '@/utils/csv';
+import { getErrorMessage } from '@/utils/errorMessage';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ko-KR');
@@ -54,7 +55,7 @@ export default function ExpensesPage(): JSX.Element {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       setForm(INITIAL_FORM);
     },
-    onError: () => setErrorMessage('경비 등록에 실패했습니다'),
+    onError: (error) => setErrorMessage(getErrorMessage(error, '경비 등록에 실패했습니다')),
   });
 
   const deleteMutation = useMutation({

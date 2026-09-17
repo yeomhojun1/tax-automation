@@ -2,6 +2,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosE
 import env from '@/config/env';
 
 const TOKEN_STORAGE_KEY = 'auth_token';
+const PUBLIC_AUTH_PATHS = ['/api/v1/auth/login', '/api/v1/auth/register'];
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiUrl,
@@ -21,7 +22,10 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url ?? '';
+    const isPublicAuthRequest = PUBLIC_AUTH_PATHS.some((path) => requestUrl.includes(path));
+
+    if (error.response?.status === 401 && !isPublicAuthRequest) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem('auth_user');
       window.location.href = '/login';

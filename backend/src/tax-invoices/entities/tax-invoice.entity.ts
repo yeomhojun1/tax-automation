@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -21,6 +22,7 @@ export enum TaxType {
 }
 
 @Entity('tax_invoices')
+@Index('UQ_tax_invoices_user_invoice_number', ['userId', 'invoiceNumber'], { unique: true })
 export class TaxInvoice {
   @PrimaryGeneratedColumn()
   id: number;
@@ -28,7 +30,7 @@ export class TaxInvoice {
   @Column({ type: 'int' })
   userId: number;
 
-  @Column({ type: 'varchar', length: 24, unique: true })
+  @Column({ type: 'varchar', length: 64 })
   invoiceNumber: string;
 
   @Column({ type: 'enum', enum: InvoiceDirection })

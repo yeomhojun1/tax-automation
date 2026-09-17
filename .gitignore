@@ -4,3 +4,7 @@ dist/
 *.local
 .DS_Store
 coverage/
+
+# 로컬 실행 로그
+.run.log
+.run-frontend.log

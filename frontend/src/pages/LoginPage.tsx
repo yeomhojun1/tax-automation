@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authApi, LoginRequest } from '@/api/auth.api';
 import useAuthStore from '@/store/useAuthStore';
+import { getErrorMessage } from '@/utils/errorMessage';
 
 export default function LoginPage(): JSX.Element {
   const navigate = useNavigate();
@@ -16,8 +17,8 @@ export default function LoginPage(): JSX.Element {
       login(result.user, result.accessToken);
       navigate('/dashboard');
     },
-    onError: () => {
-      setErrorMessage('이메일 또는 비밀번호가 올바르지 않습니다');
+    onError: (error) => {
+      setErrorMessage(getErrorMessage(error, '로그인에 실패했습니다'));
     },
   });
 

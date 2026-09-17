@@ -1,6 +1,7 @@
 import { useState, DragEvent, ChangeEvent, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoicesApi } from '@/api/invoices.api';
+import { getErrorMessage } from '@/utils/errorMessage';
 
 interface ToastState {
   message: string;
@@ -20,8 +21,8 @@ export default function InvoiceUpload(): JSX.Element {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       showToast('세금계산서가 등록되었습니다', 'success');
     },
-    onError: () => {
-      showToast('업로드에 실패했습니다. XML 파일인지 확인해 주세요', 'error');
+    onError: (error) => {
+      showToast(getErrorMessage(error, '업로드에 실패했습니다. XML 파일인지 확인해 주세요'), 'error');
     },
   });
 

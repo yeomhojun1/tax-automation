@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -29,6 +30,6 @@ export class CreateInvoiceDto {
   @Min(0)
   taxAmount: number;
 
-  @IsString()
+  @IsDateString()
   issueDate: string;
 }

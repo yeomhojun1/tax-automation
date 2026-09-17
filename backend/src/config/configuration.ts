@@ -1,5 +1,5 @@
 export default (): Record<string, unknown> => ({
-  port: parseInt(process.env.PORT ?? '3000', 10),
+  port: parseInt(process.env.PORT ?? '4002', 10),
   database: {
     url: process.env.DATABASE_URL,
   },
@@ -18,5 +18,5 @@ export default (): Record<string, unknown> => ({
     clientKey: process.env.TOSS_CLIENT_KEY ?? '',
     secretKey: process.env.TOSS_SECRET_KEY ?? '',
   },
-  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? 'http://localhost:3001').split(','),
+  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? 'http://localhost:3002').split(','),
 });

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -18,9 +19,10 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../auth/entities/user.entity';
 import { TaxInvoicesService } from './tax-invoices.service';
-import { TaxInvoice, InvoiceDirection } from './entities/tax-invoice.entity';
+import { TaxInvoice } from './entities/tax-invoice.entity';
 import { InvoiceSummaryDto } from './dtos/tax-invoice-response.dto';
 import { CreateInvoiceDto } from './dtos/create-invoice.dto';
+import { InvoiceListQueryDto, InvoiceSummaryQueryDto } from './dtos/invoice-query.dto';
 
 interface MultipartFile {
   filename: string;
@@ -39,9 +41,18 @@ export class TaxInvoicesController {
     @CurrentUser() user: User,
     @Req() request: FastifyRequest,
   ): Promise<TaxInvoice> {
-    const data = await request.file() as MultipartFile | undefined;
+    if (typeof request.isMultipart === 'function' && !request.isMultipart()) {
+      throw new BadRequestException('multipart/form-data 형식으로 파일을 전송해 주세요');
+    }
+
+    let data: MultipartFile | undefined;
+    try {
+      data = (await request.file()) as MultipartFile | undefined;
+    } catch {
+      throw new BadRequestException('업로드 요청을 읽을 수 없습니다');
+    }
     if (!data) {
-      throw new Error('파일이 없습니다');
+      throw new BadRequestException('업로드할 파일이 없습니다');
     }
 
     const buffer = await data.toBuffer();
@@ -64,20 +75,21 @@ export class TaxInvoicesController {
   @Get()
   findAll(
     @CurrentUser() user: User,
-    @Query('direction') direction?: InvoiceDirection,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query() query: InvoiceListQueryDto,
   ): Promise<TaxInvoice[]> {
-    return this.taxInvoicesService.findAll(user.id, { direction, startDate, endDate });
+    return this.taxInvoicesService.findAll(user.id, {
+      direction: query.direction,
+      startDate: query.startDate,
+      endDate: query.endDate,
+    });
   }
 
   @Get('summary')
   getSummary(
     @CurrentUser() user: User,
-    @Query('year', ParseIntPipe) year: number,
-    @Query('quarter', ParseIntPipe) quarter: number,
+    @Query() query: InvoiceSummaryQueryDto,
   ): Promise<InvoiceSummaryDto> {
-    return this.taxInvoicesService.getSummary(user.id, year, quarter);
+    return this.taxInvoicesService.getSummary(user.id, query.year, query.quarter);
   }
 
   @Delete(':id')

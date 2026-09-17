@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authApi, RegisterRequest } from '@/api/auth.api';
 import useAuthStore from '@/store/useAuthStore';
+import { getErrorMessage } from '@/utils/errorMessage';
 
 export default function RegisterPage(): JSX.Element {
   const navigate = useNavigate();
@@ -22,8 +23,8 @@ export default function RegisterPage(): JSX.Element {
       login(result.user, result.accessToken);
       navigate('/dashboard');
     },
-    onError: () => {
-      setErrorMessage('회원가입에 실패했습니다. 이미 사용 중인 이메일일 수 있습니다');
+    onError: (error) => {
+      setErrorMessage(getErrorMessage(error, '회원가입에 실패했습니다'));
     },
   });
 
