@@ -4,6 +4,8 @@ import { useMutation } from '@tanstack/react-query';
 import { authApi, LoginRequest } from '@/api/auth.api';
 import useAuthStore from '@/store/useAuthStore';
 import { getErrorMessage } from '@/utils/errorMessage';
+import DemoLoginButton from '@/demo/DemoLoginButton';
+import { IS_DEMO } from '@/demo/isDemo';
 
 export default function LoginPage(): JSX.Element {
   const navigate = useNavigate();
@@ -32,6 +34,8 @@ export default function LoginPage(): JSX.Element {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white rounded-lg shadow p-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">로그인</h1>
+
+        {IS_DEMO && <DemoLoginButton />}
 
         {errorMessage && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useAuthStore from '@/store/useAuthStore';
 import AppLayout from '@/components/layout/AppLayout';
@@ -9,6 +9,11 @@ import InvoicesPage from '@/pages/InvoicesPage';
 import ExpensesPage from '@/pages/ExpensesPage';
 import ReportPage from '@/pages/ReportPage';
 import ProfilePage from '@/pages/ProfilePage';
+import DemoBanner from '@/demo/DemoBanner';
+import { IS_DEMO } from '@/demo/isDemo';
+
+// 데모(GitHub Pages)는 새로고침 404를 피하려고 HashRouter 사용
+const Router = IS_DEMO ? HashRouter : BrowserRouter;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +35,8 @@ export default function App(): JSX.Element {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      {IS_DEMO && <DemoBanner />}
+      <Router>
         <Routes>
           <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
           <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
@@ -52,7 +58,7 @@ export default function App(): JSX.Element {
           <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </Router>
     </QueryClientProvider>
   );
 }

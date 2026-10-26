@@ -2,6 +2,8 @@ import { useState, DragEvent, ChangeEvent, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invoicesApi } from '@/api/invoices.api';
 import { getErrorMessage } from '@/utils/errorMessage';
+import SampleXmlButtons from '@/demo/SampleXmlButtons';
+import { IS_DEMO } from '@/demo/isDemo';
 
 interface ToastState {
   message: string;
@@ -101,6 +103,8 @@ export default function InvoiceUpload(): JSX.Element {
         className="hidden"
         onChange={handleChange}
       />
+
+      {IS_DEMO && <SampleXmlButtons onUpload={handleFile} disabled={mutation.isPending} />}
     </div>
   );
 }
